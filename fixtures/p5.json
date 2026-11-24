@@ -1,0 +1,123 @@
+{
+  "pack": "wimse-p5p6-fixtures",
+  "version": "1.0",
+  "property": "P5",
+  "source": "draft-molas-agent-principal-refs-00, Section 3.5 (Unobserved Status)",
+  "grading_note": "P5 as stated is behavioural: the status request must carry no value that identifies which reference is being checked. This pack grades what a transcript can show, and says 'cannot-tell' where the transcript does not carry the shape of the request.",
+  "verdict_vocabulary": [
+    "unobserved", "partial-herd", "provider-can-link", "no-status-path", "cannot-tell"
+  ],
+  "verdict_meaning": {
+    "unobserved": "the request carries no per-reference value (a list, a shared commitment, or a pushed status)",
+    "partial-herd": "the request is a list, but the list is a subset selected for one audience or one issuer, so a provider can narrow the set",
+    "provider-can-link": "a per-reference value reaches the issuer or the status provider, so the provider learns which reference is being checked",
+    "no-status-path": "there is no status check at all; staleness is carried only by expiry",
+    "cannot-tell": "the transcript does not record the shape of the status request"
+  },
+  "flag_vocabulary": [
+    "indistinguishable-never-issued", "no-refusal-observed", "audience-at-issuance"
+  ],
+  "flag_meaning": {
+    "indistinguishable-never-issued": "the service answers a value that was never issued exactly as it answers a value that was issued and then withdrawn, so the check cannot be read as evidence of issuance",
+    "no-refusal-observed": "the transcript records the status check but no relying party acting on it; P5 is about the check, so this is recorded and not graded",
+    "audience-at-issuance": "the reference names its audience at issuance, which tells the issuer the audience even when the status request itself carries nothing (reported per Section 3.5)"
+  },
+  "rows": [
+    {
+      "id": "P5-01",
+      "path": "list",
+      "case": "baseline list fetch with herd privacy",
+      "observation": {"status_request_shape": "list", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "unobserved", "flags": []},
+      "note": "Token Status List, Section 12.1 herd privacy. The request is the whole list; no index identifying the reference is sent."
+    },
+    {
+      "id": "P5-02",
+      "path": "commitment",
+      "case": "shared commitment refreshed on a schedule",
+      "observation": {"status_request_shape": "commitment", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "unobserved", "flags": []},
+      "note": "The relying party fetches one commitment shared by every reference in the cohort."
+    },
+    {
+      "id": "P5-03",
+      "path": "push",
+      "case": "status delivered without a request",
+      "observation": {"status_request_shape": "push", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "unobserved", "flags": []},
+      "note": "Section 3.5 second clause: the status reaches the relying party without a request."
+    },
+    {
+      "id": "P5-04",
+      "path": "single-record",
+      "case": "per-reference lookup by reference identifier",
+      "observation": {"status_request_shape": "per_reference", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "provider-can-link", "flags": []},
+      "note": "A compliant-looking service that answers fast and refuses correctly; it fails P5 only because of what it sends."
+    },
+    {
+      "id": "P5-05",
+      "path": "single-record",
+      "case": "per-reference lookup of a hashed reference value",
+      "observation": {"status_request_shape": "per_reference", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "provider-can-link", "flags": []},
+      "note": "Hashing the identifier does not change the shape: the provider still receives one value that distinguishes this check from every other. P5 is met by herd privacy, not by hashing."
+    },
+    {
+      "id": "P5-06",
+      "path": "none",
+      "case": "no status path; expiry only",
+      "observation": {"status_request_shape": "none", "refused_after_standing_change": false, "never_issued_answered_as_withdrawn": null},
+      "expect": {"verdict": "no-status-path", "flags": []},
+      "note": "Some drafts grade this Partial because a short expiry bounds exposure; the transcript shows no status check, so the P5 test cannot run at all."
+    },
+    {
+      "id": "P5-07",
+      "path": "list",
+      "case": "list fetched, but nothing acts on it",
+      "observation": {"status_request_shape": "list", "refused_after_standing_change": false, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "unobserved", "flags": ["no-refusal-observed"]},
+      "note": "P5 is satisfied by the fetch shape. The absent refusal belongs to P6 and is flagged, not graded here."
+    },
+    {
+      "id": "P5-08",
+      "path": "unknown",
+      "case": "transcript records a refusal but not the request",
+      "observation": {"status_request_shape": "unknown", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "cannot-tell", "flags": []},
+      "note": "The negative control for the pack itself: a refusal proves behaviour, not that the check was unobserved."
+    },
+    {
+      "id": "P5-09",
+      "path": "list",
+      "case": "list fetch, but withdrawn and never-issued answer alike",
+      "observation": {"status_request_shape": "list", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": true},
+      "expect": {"verdict": "unobserved", "flags": ["indistinguishable-never-issued"]},
+      "note": "Passes P5 and is a privacy property, but the same answer means a pass here is not evidence that the reference was ever issued. The report must say which of the two it is testing."
+    },
+    {
+      "id": "P5-10",
+      "path": "single-record",
+      "case": "per-reference lookup with the same answer for withdrawn and never-issued",
+      "observation": {"status_request_shape": "per_reference", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": true},
+      "expect": {"verdict": "provider-can-link", "flags": ["indistinguishable-never-issued"]},
+      "note": "Both defects at once; the verdict follows the request shape, the flag carries the second."
+    },
+    {
+      "id": "P5-11",
+      "path": "list-subset",
+      "case": "a list, but one selected for a single audience",
+      "observation": {"status_request_shape": "list_subset", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "partial-herd", "flags": ["audience-at-issuance"]},
+      "note": "The fetch is a list, so no single reference is named per request; but the subset is chosen for one audience, so herd size is the audience's size. Section 3.5 records the audience observation separately."
+    },
+    {
+      "id": "P5-12",
+      "path": "push-per-reference",
+      "case": "subscription to status of one reference",
+      "observation": {"status_request_shape": "push_per_reference", "refused_after_standing_change": true, "never_issued_answered_as_withdrawn": false},
+      "expect": {"verdict": "provider-can-link", "flags": []},
+      "note": "No request is sent at check time, but subscribing named the reference once; from the provider's side that is the same leak, later."
+    }
+  ]
+}

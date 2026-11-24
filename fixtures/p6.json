@@ -1,0 +1,194 @@
+{
+  "pack": "wimse-p5p6-fixtures",
+  "version": "1.0",
+  "property": "P6",
+  "source": "draft-molas-agent-principal-refs-00, Section 3.6 (Bounded Withdrawal)",
+  "grading_note": "P6 requires, per withdrawal path, a stated numeric bound measured from a stated withdrawal event, and a conforming relying party refusing at or before that bound. A bound measured from receipt of a notification does not count.",
+  "verdict_vocabulary": [
+    "within-bound", "out-of-bound", "bound-not-from-event", "bound-start-unspecified",
+    "no-stated-bound", "not-refused", "cannot-tell"
+  ],
+  "verdict_meaning": {
+    "within-bound": "the first refusal is at or before the stated bound, measured from the stated event",
+    "out-of-bound": "the first refusal is after the stated bound, with the margin reported",
+    "bound-not-from-event": "a numeric bound is stated, but measured from receipt of a notification or from the operator's own record",
+    "bound-start-unspecified": "a numeric bound is stated without saying what starts the clock",
+    "no-stated-bound": "no numeric bound is stated ('immediately', 'without undue delay')",
+    "not-refused": "at least one withdrawn value is never refused by a conforming relying party",
+    "cannot-tell": "the timeline lacks the event or the refusal, so the property cannot be checked"
+  },
+  "flag_vocabulary": ["segment2-unobservable", "refused-without-status", "path-not-listed"],
+  "flag_meaning": {
+    "segment2-unobservable": "the operator's own record time is missing, so only the declared ingestion leg is available",
+    "refused-without-status": "the refusal happened while the status source was unreachable, so the refusal did not come from reading status",
+    "path-not-listed": "the transcript carries a withdrawal path that the specification's bound table does not list"
+  },
+  "segment_note": "Each row reports two segments: segment1 = t_operator_record - t0 (an operator property, declared) and segment2 = t_first_refusal - t_operator_record (measurable by a third party). A single bound over their sum is not third-party measurable, which is why the pack keeps them apart.",
+  "rows": [
+    {
+      "id": "P6-01",
+      "path": "list",
+      "case": "list path, bound 3600 s, refusal at 300 s",
+      "declared_bound_seconds": 3600,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:45Z", "t_first_refusal": "2026-11-20T10:05:00Z"},
+      "expect": {"verdict": "within-bound", "flags": []},
+      "note": "segment1 = 45 s (declared), segment2 = 255 s (third-party measurable)."
+    },
+    {
+      "id": "P6-02",
+      "path": "list",
+      "case": "same shape, refusal at 5400 s, bound 3600 s",
+      "declared_bound_seconds": 3600,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:45Z", "t_first_refusal": "2026-11-20T11:30:00Z"},
+      "expect": {"verdict": "out-of-bound", "flags": []},
+      "note": "Compliant in every other respect; the negative control for the bound itself."
+    },
+    {
+      "id": "P6-03",
+      "path": "feed",
+      "case": "feed path, bound 900 s, refusal at 840 s",
+      "declared_bound_seconds": 900,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:20Z", "t_first_refusal": "2026-11-20T10:14:00Z"},
+      "expect": {"verdict": "within-bound", "flags": []},
+      "note": "The margin is 60 s; a report that prints only 'within bound' hides how small it is."
+    },
+    {
+      "id": "P6-04",
+      "path": "feed",
+      "case": "feed path, bound 900 s, refusal at 1200 s",
+      "declared_bound_seconds": 900,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:20Z", "t_first_refusal": "2026-11-20T10:20:00Z"},
+      "expect": {"verdict": "out-of-bound", "flags": []},
+      "note": ""
+    },
+    {
+      "id": "P6-05",
+      "path": "single-record",
+      "case": "single-record path, bound 60 s, refusal at 59 s",
+      "declared_bound_seconds": 60,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:01Z", "t_first_refusal": "2026-11-20T10:00:59Z"},
+      "expect": {"verdict": "within-bound", "flags": []},
+      "note": "One second inside the bound."
+    },
+    {
+      "id": "P6-06",
+      "path": "single-record",
+      "case": "single-record path, bound 60 s, refusal at 61 s",
+      "declared_bound_seconds": 60,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:01Z", "t_first_refusal": "2026-11-20T10:01:01Z"},
+      "expect": {"verdict": "out-of-bound", "flags": []},
+      "note": "The pair with P6-05 pins the comparison as inclusive at the bound and exclusive one second later."
+    },
+    {
+      "id": "P6-07",
+      "path": "principal-standing",
+      "case": "principal standing changes, agent and token stay valid, bound 300 s, refusal exactly at 300 s",
+      "declared_bound_seconds": 300,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:10Z", "t_first_refusal": "2026-11-20T10:05:00Z"},
+      "expect": {"verdict": "within-bound", "flags": []},
+      "note": "Boundary case: 'at or before' includes the bound itself."
+    },
+    {
+      "id": "P6-08",
+      "path": "principal-standing",
+      "case": "the same case, refusal at 301 s",
+      "declared_bound_seconds": 300,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:10Z", "t_first_refusal": "2026-11-20T10:05:01Z"},
+      "expect": {"verdict": "out-of-bound", "flags": []},
+      "note": "This is the case that a check on the token alone cannot see: nothing about the token changed."
+    },
+    {
+      "id": "P6-09",
+      "path": "list",
+      "case": "bound stated, measured from receipt of the notification",
+      "declared_bound_seconds": 600,
+      "bound_start": "receipt",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:02:00Z", "t_first_refusal": "2026-11-20T10:09:00Z"},
+      "expect": {"verdict": "bound-not-from-event", "flags": []},
+      "note": "Section 3.6: the time of receipt is not observable by the party that withdrew, so the bound does not count."
+    },
+    {
+      "id": "P6-10",
+      "path": "feed",
+      "case": "numeric bound, no clock start stated",
+      "declared_bound_seconds": 1200,
+      "bound_start": "unspecified",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:30Z", "t_first_refusal": "2026-11-20T10:18:00Z"},
+      "expect": {"verdict": "bound-start-unspecified", "flags": []},
+      "note": ""
+    },
+    {
+      "id": "P6-11",
+      "path": "list",
+      "case": "'without undue delay', no numeric bound",
+      "declared_bound_seconds": null,
+      "bound_start": "unspecified",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:15Z", "t_first_refusal": "2026-11-20T10:04:00Z"},
+      "expect": {"verdict": "no-stated-bound", "flags": []},
+      "note": "A fast refusal does not repair an unstated bound: the row is not gradeable as met."
+    },
+    {
+      "id": "P6-12",
+      "path": "single-record",
+      "case": "refusal recorded, operator's own record time missing",
+      "declared_bound_seconds": 900,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": null, "t_first_refusal": "2026-11-20T10:06:00Z"},
+      "expect": {"verdict": "within-bound", "flags": ["segment2-unobservable"]},
+      "note": "The bound can still be checked from the event; only the split into two segments is unavailable."
+    },
+    {
+      "id": "P6-13",
+      "path": "feed",
+      "case": "no refusal recorded at all",
+      "declared_bound_seconds": 900,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:20Z", "t_first_refusal": null},
+      "expect": {"verdict": "cannot-tell", "flags": []},
+      "note": "Distinct from not-refused: here nothing was observed, which is weaker than observing a value that was accepted."
+    },
+    {
+      "id": "P6-14",
+      "path": "principal-standing",
+      "case": "refusal while the status source is unreachable",
+      "declared_bound_seconds": 3600,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:05Z", "t_first_refusal": "2026-11-20T10:25:00Z"},
+      "observation": {"status_source_reachable_at_refusal": false},
+      "expect": {"verdict": "within-bound", "flags": ["refused-without-status"]},
+      "note": "This is the case the draft's Section 3.5 note cares about: refusal inside the bound while the status cannot be read. The row is met, and the report should say the refusal was not derived from reading status."
+    },
+    {
+      "id": "P6-15",
+      "path": "single-record",
+      "case": "two values withdrawn, one refused in bound, one never refused",
+      "declared_bound_seconds": 600,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:10Z", "t_first_refusal": "2026-11-20T10:03:20Z"},
+      "values": [
+        {"value_id": "A", "t_refused": "2026-11-20T10:03:20Z"},
+        {"value_id": "B", "t_refused": null}
+      ],
+      "expect": {"verdict": "not-refused", "flags": []},
+      "note": "A per-value row: reporting the minimum over values hides B entirely, which is the failure this row exists to catch."
+    },
+    {
+      "id": "P6-16",
+      "path": "operator-revocation",
+      "case": "operator-initiated revocation, bound 3600 s, refusal at 7200 s",
+      "declared_bound_seconds": 3600,
+      "bound_start": "event",
+      "timeline": {"t0": "2026-11-20T10:00:00Z", "t_operator_record": "2026-11-20T10:00:05Z", "t_first_refusal": "2026-11-20T12:00:00Z"},
+      "expect": {"verdict": "out-of-bound", "flags": []},
+      "note": "A different event type with its own clock start; this is the path that a single bound over all paths usually misses."
+    }
+  ]
+}
